@@ -112,7 +112,7 @@ class FeedForwardBlock(nn.Module):
 This is probably the most important block: the famous Multi-Head Attention.
 """
 
-class MultiHeadAttentionBloc(nn.Module):
+class MultiHeadAttentionBlock(nn.Module):
     def __init__(self, d_model: int, n_heads: int, dropout: float):
         super().__init__()
         self.d_model = d_model
@@ -184,7 +184,7 @@ class MultiHeadAttentionBloc(nn.Module):
         value = value.view(value.shape[0], value.shape[1], self.n_heads, self.d_k).transpose(1, 2)
         
         # here we use the function we previously introduced as a static method
-        x, self.attention_scores = MultiHeadAttentionBloc.attention(query, key, value, mask, self.dropout)
+        x, self.attention_scores = MultiHeadAttentionBlock.attention(query, key, value, mask, self.dropout)
 
         # Here we concatenate the information from the different heads. By multiplying n_heads and d_k, 
         # we effectively concatenate the d_k elements from each head for every sequence position into a single 
@@ -201,6 +201,7 @@ class MultiHeadAttentionBloc(nn.Module):
 Here we will build the residual connection component of the transformer. This will allow
 a better training and make some 'raw' input flow from layer to layer.
 """
+
 class ResidualConnection(nn.Module):
     def __init__(self, dropout: float):
         super().__init__()
@@ -211,4 +212,37 @@ class ResidualConnection(nn.Module):
         # Normalize x, then pass it through a sublayer, use the dropout term, and finally add x
         return x + self.dropout(sublayer(self.normalization(x)))
 
+
+"""
+Here's the encoder block
+"""
+
+class EncoderBlock(nn.Module):
+    def __init__(self, self_attention_block: MultiHeadAttentionBlock, feed_forward_block: FeedForwardBlock, dropout: float):
+        super().__init__()
+        self.self_attention_block = self_attention_block
+        self.feed_forward_block = feed_forward_block
+        # we pack two residual connections in a ModuleList
+        self.residual_connections = nn.ModuleList([ResidualConnection(dropout) for _ in range(2)])
+
+    def forward(self, x, src_mask):
+        # we are calling the MultiHeadAttention, which takes Q, K, V and Mask
+        x = self.residual_connections[0](lambda x: self.self_attention_block(x, x, x, src_mask))
+        x = self.residual_connections[1](x, self.feed_forward_block)
+
+
+"""
+This is how we stack the encoder block in several layers
+"""
+
+class Encoder(nn.Module):
+    def __init__(self, n_layers: nn.ModuleList) -> None:
+        super().__init__()
+        self.n_layers = n_layers
+        self.normalization = LayerNormalization()
+
+    def forward(self, x, mask):
+        for layer in self.n_layers:
+            x = layer(x, mask)
+        return self.normalization(x)
 
