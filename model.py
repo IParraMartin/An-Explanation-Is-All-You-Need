@@ -126,7 +126,7 @@ class MultiHeadAttentionBloc(nn.Module):
         self.w_k = nn.Linear(d_model, d_model, bias=False) # Wk
         self.w_v = nn.Linear(d_model, d_model, bias=False) # Wv
 
-        # Set Wo, which is (n_heads * self.d_v) x d_model which is the same as d_model x d_model
+        # Set Wo, which is [(n_heads * self.d_v), d_model] which is the same as [d_model, d_model]
         self.w_o = nn.Linear(d_model, d_model)
 
         # Finally the dropout
@@ -135,11 +135,32 @@ class MultiHeadAttentionBloc(nn.Module):
         """
         COMMON QUESION: If d_k and d_v are the same dimensions, why do they have different names?
         d_v is the result of the last multiplication of the attention formula (which is by V; see 
-        the original paper). However, don't worry because in practice they are the same.
+        the original paper). However, in practice they are the same.
         """
 
+
+    @staticmethod
+    def attention(query, key, value, mask, dropout: nn.Dropout):
+        # We extact the d_k, which is the last dimension of Q, K, and V
+        d_k = query.shape[-1]
+        # We apply the self-attention scores formula. We transpose the last two dims to make the calculation possible
+        # Transform: [Batch, n_heads, seq_len, d_k] -> [Batch, n_heads, seq_len, seq_len]
+        attention_scores = (query @ key.transpose(-2, -1)) / math.sqrt(d_k)
+        # This is for the masking
+        if mask is not None:
+            attention_scores.masked_fill_(mask == 0, -1e9)
+        # We apply softmax
+        # Transform: [Batch, n_heads, seq_len, seq_len]
+        attention_scores = attention_scores.softmax(dim = -1) 
+        # We add dropout
+        if dropout is not None:
+            attention_scores = dropout(attention_scores)
+        # We return a tupple with the attention and the self-attention for visualization
+        return (attention_scores @ value), attention_scores
+    
+
     def forward(self, q, k, v, mask):
-        # [Batch x seq_len x d_model] -> [Batch x seq_len x d_model]
+        # Transform: [Batch, seq_len, d_model] -> [Batch, seq_len, d_model]
         query = self.w_q(q)
         key = self.w_k(k) 
         value = self.w_v(v) 
@@ -147,13 +168,39 @@ class MultiHeadAttentionBloc(nn.Module):
         """
         Explanation:
         We need to divide those to feed "pieces" to different heads (power of parallel processing!)
-        [Batch x seq_len x d_model] -> [Batch x seq_len x n_heads x d_k] -> [Batch x n_heads x seq_len x d_k]
+        Transform: [Batch, seq_len, d_model] -> [Batch, seq_len, n_heads, d_k] -> [Batch, n_heads, seq_len x d_k]
+
             - We don't want to split the batches: query.shape[0]
             - We don't want to split the sequence: query.shape[1]
             - We want to split the d_model (embeddings): self.n_heads, self.d_k
             - We want the transposition because we want each head to see the seq_len and d_k
+        
+        The transposition allows the model to process each head independently across the sequence length. Each head can 
+        focus on different parts of the input sequence, enabling the model to capture various aspects of 
+        the input data in parallel.
         """
         query = query.view(query.shape[0], query.shape[1], self.n_heads, self.d_k).transpose(1, 2)
         key = key.view(key.shape[0], key.shape[1], self.n_heads, self.d_k).transpose(1, 2)
         value = value.view(value.shape[0], value.shape[1], self.n_heads, self.d_k).transpose(1, 2)
+        
+        # here we use the function we previously introduced as a static method
+        x, self.attention_scores = MultiHeadAttentionBloc.attention(query, key, value, mask, self.dropout)
+
+        # Here we concatenate the information from the different heads
+        # [batch, n_heads, seq_len, d_k] -> [batch, seq_len, n_heads, d_k] -> [batch, seq_len, d_model]
+        x = x.transpose(1, 2).contiguous().view(x.shape[0], -1, self.n_heads * self.d_k)
+
+        # [batch, seq_len, d_model] -> [batch, seq_len, d_model]
+        return self.w_o(x)
+    
+
+"""
+Here we will build the residual connection component of the transformer. This will allow
+a better training and make some 'raw' input flow from layer to layer.
+"""
+class ResidualConnection(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+
 
