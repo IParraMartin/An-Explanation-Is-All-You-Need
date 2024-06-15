@@ -92,16 +92,16 @@ class LayerNormalization(nn.Module):
 class FeedForwardBlock(nn.Module):
     def __init__(self, d_model: int, d_ff: int, dropout: float):
         super().__init__()
-        self.ffb = nn.Sequential(
-            nn.Linear(d_model, d_ff),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(d_ff, d_model)
-        )
+        self.linear1 = nn.Linear(d_model, d_ff) # This corresponds to W1 and B1 of Vaswani et al. (2017)
+        self.dropout = nn.Dropout(dropout)
+        self.linear2 = nn.Linear(d_ff, d_model) # This corresponds to W2 and B2
 
     def forward(self, x):
-        return self.ffb(x)
+        return self.linear2(self.dropout(nn.ReLU(self.linear1(x))))
     
+
+
+
 
 
 
