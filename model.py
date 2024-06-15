@@ -134,24 +134,26 @@ class MultiHeadAttentionBloc(nn.Module):
 
         """
         COMMON QUESION: If d_k and d_v are the same dimensions, why do they have different names?
-        This is the answer I got: 
         d_v is the result of the last multiplication of the attention formula (which is by V; see 
         the original paper). However, don't worry because in practice they are the same.
         """
 
     def forward(self, q, k, v, mask):
+        # [Batch x seq_len x d_model] -> [Batch x seq_len x d_model]
+        query = self.w_q(q)
+        key = self.w_k(k) 
+        value = self.w_v(v) 
 
-
-
-
-
-
-
-    
-
-
-
-
-
-
+        """
+        Explanation:
+        We need to divide those to feed "pieces" to different heads (power of parallel processing!)
+        [Batch x seq_len x d_model] -> [Batch x seq_len x n_heads x d_k] -> [Batch x n_heads x seq_len x d_k]
+            - We don't want to split the batches: query.shape[0]
+            - We don't want to split the sequence: query.shape[1]
+            - We want to split the d_model (embeddings): self.n_heads, self.d_k
+            - We want the transposition because we want each head to see the seq_len and d_k
+        """
+        query = query.view(query.shape[0], query.shape[1], self.n_heads, self.d_k).transpose(1, 2)
+        key = key.view(key.shape[0], key.shape[1], self.n_heads, self.d_k).transpose(1, 2)
+        value = value.view(value.shape[0], value.shape[1], self.n_heads, self.d_k).transpose(1, 2)
 
