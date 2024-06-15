@@ -199,8 +199,16 @@ Here we will build the residual connection component of the transformer. This wi
 a better training and make some 'raw' input flow from layer to layer.
 """
 class ResidualConnection(nn.Module):
-    def __init__(self):
+    def __init__(self, dropout: float):
         super().__init__()
+        self.dropout = nn.Dropout(dropout)
+        self.normalization = LayerNormalization()
+
+    def forward(self, x, sublayer):
+        # Normalize x, then pass it through a sublayer, use the dropout term, and finally add x
+        return x + self.dropout(sublayer(self.normalization(x)))
+
+
 
 
 
