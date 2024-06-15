@@ -1,6 +1,5 @@
 import torch
 import torch.nn as nn
-
 from torchsummary import summary
 import math
 
@@ -14,11 +13,8 @@ layer from torch.nn and set num_embeddings and embedding_dim
 class InputEmbeddings(nn.Module):
     def __init__(self, d_model: int, vocab_size: int):
         super().__init__()
-        # Embedding dims
         self.d_model = d_model
-        # Vocab size
         self.voca_size = vocab_size
-        # Main layer
         self.embedding = nn.Embedding(
             num_embeddings=vocab_size,
             embedding_dim=d_model
