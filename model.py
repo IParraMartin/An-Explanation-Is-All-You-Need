@@ -59,8 +59,15 @@ class PositionalEmbeddings(nn.Module):
 
     def forward(self, x):
         # We add the positional encoding to the input tensor. We slice it to match
-        # the dimensions of the word embedding. We also make sure to make the positional
-        # embeddings static (.requires_grad)
+        # the dimensions of the word embedding. Remember the dimensions are: 
+        # 0: Batch
+        # 1: Embeddings
+        # 2: Dimension
+        # We take dim 1 (Embeddings) and align them with the shape dim 1 (length) of x (the 
+        # actual word embeddings). We also make sure to make the positional
+        # embeddings static (.requires_grad).
         x = x + (self.pe[:, :x.shape[1], :]).requires_grad(False)
         return self.dropout(x)
+    
+
     
