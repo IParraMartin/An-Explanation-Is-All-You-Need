@@ -70,4 +70,23 @@ class PositionalEmbeddings(nn.Module):
         return self.dropout(x)
     
 
-    
+"""
+We now design the Layer Normalization. We do this by passing an epsilon value (eps), 
+which is added to avoid 0 division in the normalization operation.
+"""
+class LayerNormalization(nn.Module):
+    def __init__(self, eps: float = 10 ** -6):
+        super().__init__()
+        self.eps = eps
+        # We set alpha and bias as trainable params
+        self.alpha = nn.Parameter(torch.ones(1))
+        self.bias  = nn.Parameter(torch.zeros(1))
+
+    def forward(self, x):
+        # Get mean and std
+        mean = x.mean(dim=-1, keepdim=True)
+        std = x.std(dim=-1, keepdim=True)
+        # Finally use the formula to normalize
+        return self.alpha * (x - mean) / (std + self.eps) + self.bias
+
+
