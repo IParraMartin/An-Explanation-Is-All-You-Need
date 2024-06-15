@@ -89,6 +89,11 @@ class LayerNormalization(nn.Module):
         # Finally use the formula to normalize
         return self.alpha * (x - mean) / (std + self.eps) + self.bias
 
+
+"""
+This is the Position Wise Feed-Forward Network. That's just a fancy name
+for a simple neural network, with two layers and a Relu activation in between.
+"""
 class FeedForwardBlock(nn.Module):
     def __init__(self, d_model: int, d_ff: int, dropout: float):
         super().__init__()
@@ -97,7 +102,51 @@ class FeedForwardBlock(nn.Module):
         self.linear2 = nn.Linear(d_ff, d_model) # This corresponds to W2 and B2
 
     def forward(self, x):
+        # Pass the main function
         return self.linear2(self.dropout(nn.ReLU(self.linear1(x))))
+
+
+"""
+This is probably the most important block: the famous Multi-Head Attention.
+"""
+class MultiHeadAttentionBloc(nn.Module):
+    def __init__(self, d_model: int, n_heads: int, dropout: float):
+        super().__init__()
+        # We set the model heads
+        self.d_model = d_model
+        self.n_heads = n_heads
+        # We must be able to send equal dims to the different heads
+        assert d_model % n_heads == 0, "Division between d_model and n_heads must be possible." 
+
+        # d_k is the dim that each tensor will have to be parallelized in different heads
+        self.d_k = d_model // n_heads
+
+        # Set up the weight matrices
+        self.w_q = nn.Linear(d_model, d_model, bias=False) # Wq
+        self.w_k = nn.Linear(d_model, d_model, bias=False) # Wk
+        self.w_v = nn.Linear(d_model, d_model, bias=False) # Wv
+
+        # Set Wo, which is (n_heads * self.d_v) x d_model which is the same as d_model x d_model
+        self.w_o = nn.Linear(d_model, d_model)
+
+        # Finally the dropout
+        self.dropout = nn.Dropout(dropout)
+
+        """
+        COMMON QUESION: If d_k and d_v are the same dimensions, why do they have different names?
+        This is the answer I got: 
+        d_v is the result of the last multiplication of the attention formula (which is by V; see 
+        the original paper). However, don't worry because in practice they are the same.
+        """
+
+    def forward(self, q, k, v, mask):
+
+
+
+
+
+
+
     
 
 
