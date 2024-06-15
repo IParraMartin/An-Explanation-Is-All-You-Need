@@ -214,21 +214,26 @@ class ResidualConnection(nn.Module):
 
 
 """
-Here's the encoder block
+Here's the encoder block that we will use to create the Encoder object (stacking of Encoder layers)
 """
 
 class EncoderBlock(nn.Module):
     def __init__(self, self_attention_block: MultiHeadAttentionBlock, feed_forward_block: FeedForwardBlock, dropout: float):
         super().__init__()
+        # This is the multi-head attention
         self.self_attention_block = self_attention_block
+        # This is the Point-wise feed forward network
         self.feed_forward_block = feed_forward_block
-        # we pack two residual connections in a ModuleList
+        # we pack two residual connections in a nn.ModuleList
         self.residual_connections = nn.ModuleList([ResidualConnection(dropout) for _ in range(2)])
 
     def forward(self, x, src_mask):
-        # we are calling the MultiHeadAttention, which takes Q, K, V and Mask
+        # In the first residual connection (idx: 0), we are using MultiHeadAttention, which takes Q, K, V and mask, and
+        # the residual input. We add both and we pass that result to the second residual connection (idx: 1). This
+        # makes the same operation but with the FeedForwardBlock.
         x = self.residual_connections[0](lambda x: self.self_attention_block(x, x, x, src_mask))
         x = self.residual_connections[1](x, self.feed_forward_block)
+        return x
 
 
 """
@@ -236,13 +241,16 @@ This is how we stack the encoder block in several layers
 """
 
 class Encoder(nn.Module):
-    def __init__(self, n_layers: nn.ModuleList) -> None:
+    def __init__(self, n_layers: nn.ModuleList):
         super().__init__()
+        # We can create as many layers as we want
         self.n_layers = n_layers
         self.normalization = LayerNormalization()
 
     def forward(self, x, mask):
+        # we iterate over n layers
         for layer in self.n_layers:
             x = layer(x, mask)
+        # finally we normalize
         return self.normalization(x)
 
