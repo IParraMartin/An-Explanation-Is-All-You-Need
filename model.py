@@ -9,7 +9,6 @@ We set up the dimension of the embeddings (d_model),
 and the vocab size (vocan_size). Then we use an embedding
 layer from torch.nn and set num_embeddings and embedding_dim
 """
-
 class InputEmbeddings(nn.Module):
     def __init__(self, d_model: int, vocab_size: int):
         super().__init__()
@@ -31,7 +30,6 @@ to encode the information of word order in some way. The
 authors came up with Positional Encoding, wich is summed to 
 the original embedding vectors.
 """
-
 class PositionalEmbeddings(nn.Module):
     def __init__(self, d_model: int, seq_len: int, dropout: float):
         super().__init__()
@@ -74,7 +72,6 @@ class PositionalEmbeddings(nn.Module):
 We now design the Layer Normalization. We do this by passing an epsilon value (eps), 
 which is added to avoid 0 division in the normalization operation.
 """
-
 class LayerNormalization(nn.Module):
     def __init__(self, eps: float = 10 ** -6):
         super().__init__()
@@ -95,7 +92,6 @@ class LayerNormalization(nn.Module):
 This is the Position Wise Feed-Forward Network. That's just a fancy name
 for a simple neural network, with two layers and a Relu activation in between.
 """
-
 class FeedForwardBlock(nn.Module):
     def __init__(self, d_model: int, d_ff: int, dropout: float):
         super().__init__()
@@ -111,7 +107,6 @@ class FeedForwardBlock(nn.Module):
 """
 This is probably the most important block: the famous Multi-Head Attention.
 """
-
 class MultiHeadAttentionBlock(nn.Module):
     def __init__(self, d_model: int, n_heads: int, dropout: float):
         super().__init__()
@@ -201,7 +196,6 @@ class MultiHeadAttentionBlock(nn.Module):
 Here we will build the residual connection component of the transformer. This will allow
 a better training and make some 'raw' input flow from layer to layer.
 """
-
 class ResidualConnection(nn.Module):
     def __init__(self, dropout: float):
         super().__init__()
@@ -216,7 +210,6 @@ class ResidualConnection(nn.Module):
 """
 Here's the encoder block that we will use to create the Encoder object (stacking of Encoder layers)
 """
-
 class EncoderBlock(nn.Module):
     def __init__(self, self_attention_block: MultiHeadAttentionBlock, feed_forward_block: FeedForwardBlock, dropout: float):
         super().__init__()
@@ -239,7 +232,6 @@ class EncoderBlock(nn.Module):
 """
 This is how we stack the Encoder block in several layers. This will be the main Encoder object.
 """
-
 class Encoder(nn.Module):
     def __init__(self, n_layers: nn.ModuleList):
         super().__init__()
@@ -259,7 +251,6 @@ class Encoder(nn.Module):
 This will be the Decoder block that will allow us to make several layers of it. We introduce cross attention, which
 is similar to multi-head attention but taken parameters from the encoder.
 """
-
 class DecoderBlock(nn.Module):
     def __init__(self, self_attention_block: MultiHeadAttentionBlock, cross_attention_block: MultiHeadAttentionBlock, 
                  feed_forward_block: FeedForwardBlock, dropout: float):
@@ -280,7 +271,6 @@ class DecoderBlock(nn.Module):
 """
 This will be our main Decoder object
 """
-
 class Decoder(nn.Module):
     def __init__(self, n_layers: nn.ModuleList):
         super().__init__()
@@ -296,4 +286,13 @@ class Decoder(nn.Module):
         return self.normalization(x)
         
 
+"""
+Final layer to convert logits to a probability distribution over all the vocabulary
+"""
+class LinearDicProjection(nn.Module):
+    def __init__(self, d_model, vocab_size):
+        super().__init__()
+        self.fc = nn.Linear(d_model, vocab_size)
 
+    def forward(self, x):
+        return torch.log_softmax(self.fc(x), dim=-1)
