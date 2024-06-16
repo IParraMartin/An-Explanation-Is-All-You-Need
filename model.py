@@ -284,12 +284,15 @@ This will be our main Decoder object
 class Decoder(nn.Module):
     def __init__(self, n_layers: nn.ModuleList):
         super().__init__()
+        # we set the n_layers parameter
         self.n_layers = n_layers
         self.normalization = LayerNormalization()
 
     def forward(self, x, enc_out, src_mask, tgt_mask):
+        # we iterate over n layers
         for layer in self.n_layers:
             x = layer(x, enc_out, src_mask, tgt_mask)
+        # finally we normalize
         return self.normalization(x)
         
 
