@@ -327,8 +327,12 @@ class Transformer(nn.Module):
     # We pass the outputs through the final linear layer
     def linear(self, x):
         return self.last_linear(x)
-    
 
+"""
+We will finally create a function that allows us to ensemble everything
+together and create the layers of encoders and decoders. This is what the
+original paper calls Nx in the figure to the sides of the main figure.
+"""
 def build_transformer_model(src_vocab_size: int, tgt_vocab_size: int, src_seq_len: int, tgt_seq_len: int, d_model: int= 512, 
                             n_layers: int = 6, n_heads: int = 8, dropout: float = 0.1, hidden_size: int = 2048):
     
