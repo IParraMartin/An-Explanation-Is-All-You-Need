@@ -26,8 +26,8 @@ class InputEmbeddings(nn.Module):
 """
 Because the attention mechanisms are position invariant, we need
 to encode the information of word order in some way. The 
-authors came up with Positional Encoding, wich is summed to 
-the original embedding vectors.
+authors came up with positional encoding, which is summed to 
+the original embeddings.
 """
 class PositionalEmbeddings(nn.Module):
     def __init__(self, d_model: int, seq_len: int, dropout: float):
@@ -36,13 +36,13 @@ class PositionalEmbeddings(nn.Module):
         self.seq_len = seq_len
         self.dropout= nn.Dropout(dropout)
 
-        # Create a tensor of zeroes to fill in the following steps
+        # Create a tensor of zeros to fill in
         pe = torch.zeros(seq_len, d_model)
-        # Create a positions vector of shape seq_len. We use .arange(), 
+        # Create a positions vector of shape seq_len. We use .arange()
         position = torch.arange(start=0, end=seq_len, dtype=torch.float).unsqueeze(1)
         # We create the division term of the formula
         div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000) / d_model))
-        # Apply sine and cosine. The sine is applied to even numbers; cosine to odd ones
+        # Apply sine and cosine. The sine is applied to even numbers; cosine to odd numbers
         pe[:, 0::2] = torch.sin(position * div_term)
         pe[:, 1::2] = torch.cos(position * div_term)
         
@@ -56,11 +56,8 @@ class PositionalEmbeddings(nn.Module):
 
     def forward(self, x):
         # We add the positional encoding to the input tensor. We slice it to match
-        # the dimensions of the word embedding. Remember the dimensions are: 
-        # 0: Batch
-        # 1: Embeddings
-        # 2: Dimension
-        # We take dim 1 (Embeddings) and align them with the shape dim 1 (length) of x (the 
+        # the dimensions of the word embedding. Remember the dimensions are: [batch, pos_embedings, dimension]
+        # We take dim 1 (pos_embeddings) and align them with the dim 1 of x (the 
         # actual word embeddings). We also make sure to make the positional
         # embeddings static (.requires_grad).
         x = x + (self.pe[:, :x.shape[1], :]).requires_grad(False)
@@ -99,7 +96,7 @@ class FeedForwardBlock(nn.Module):
         self.linear2 = nn.Linear(d_ff, d_model) # This corresponds to W2 and B2
 
     def forward(self, x):
-        # Pass the main function
+        # Pass the main function and return [d_model] dim
         return self.linear2(self.dropout(nn.ReLU(self.linear1(x))))
 
 
@@ -111,6 +108,7 @@ class MultiHeadAttentionBlock(nn.Module):
         super().__init__()
         self.d_model = d_model
         self.n_heads = n_heads
+
         # We must be able to send equal dims to the different heads
         assert d_model % n_heads == 0, "Division between d_model and n_heads must be possible." 
 
@@ -122,7 +120,7 @@ class MultiHeadAttentionBlock(nn.Module):
         self.w_k = nn.Linear(d_model, d_model, bias=False) # Wk
         self.w_v = nn.Linear(d_model, d_model, bias=False) # Wv
 
-        # Set Wo, which is [(n_heads * self.d_v), d_model] which is the same as [d_model, d_model]
+        # Set Wo, which is [(n_heads * self.d_v), d_model] = [d_model, d_model]
         self.w_o = nn.Linear(d_model, d_model)
 
         self.dropout = nn.Dropout(dropout)
@@ -154,14 +152,14 @@ class MultiHeadAttentionBlock(nn.Module):
     
 
     def forward(self, q, k, v, mask):
-        # Transform: [Batch, seq_len, d_model] -> [Batch, seq_len, d_model]
+        # Project the embeddings into the weight matrices [Batch, seq_len, d_model] -> [Batch, seq_len, d_model]
         query = self.w_q(q)
         key = self.w_k(k) 
         value = self.w_v(v) 
 
         """
-        Explanation:
-        We need to divide those to feed "pieces" to different heads (power of parallel processing!)
+        IMPORTANT:
+        We need to divide Q, K and V to feed "pieces" to different heads (power of parallel processing!)
         Transform: [Batch, seq_len, d_model] -> [Batch, seq_len, n_heads, d_k] -> [Batch, n_heads, seq_len x d_k]
 
             - We don't want to split the batches: query.shape[0]
@@ -187,7 +185,7 @@ class MultiHeadAttentionBlock(nn.Module):
         # Transform: [batch, n_heads, seq_len, d_k] -> [batch, seq_len, n_heads, d_k] -> [batch, seq_len, d_model]
         x = x.transpose(1, 2).contiguous().view(x.shape[0], -1, self.n_heads * self.d_k)
 
-        # [batch, seq_len, d_model] -> [batch, seq_len, d_model]
+        # Project x it in weights Wo and return it as [batch, seq_len, d_model]
         return self.w_o(x)
     
 
@@ -202,7 +200,7 @@ class ResidualConnection(nn.Module):
         self.normalization = LayerNormalization()
 
     def forward(self, x, sublayer):
-        # Normalize x, then pass it through a sublayer, use the dropout term, and finally add x
+        # Normalize x, then pass it through a sublayer (any type), use the dropout term, and finally add x
         return x + self.dropout(sublayer(self.normalization(x)))
 
 
