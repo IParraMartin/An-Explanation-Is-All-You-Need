@@ -327,4 +327,25 @@ class Transformer(nn.Module):
     # We pass the outputs through the final linear layer
     def linear(self, x):
         return self.last_linear(x)
-        
+    
+
+def build_transformer_model(src_vocab_size: int, tgt_vocab_size: int, src_seq_len: int, tgt_seq_len: int, d_model: int= 512, 
+                            n_layers: int = 6, n_heads: int = 8, dropout: float = 0.1, hidden_size: int = 2048):
+    
+    # Make the embedding layers for input and target
+    src_embed = InputEmbeddings(d_model, src_vocab_size)
+    tgt_embed = InputEmbeddings(d_model, tgt_vocab_size)
+    
+    # Make the positional embeddings for input and target 
+    # (in practice you can use the same for both src and tgt)
+    src_pos = PositionalEmbeddings(d_model, src_seq_len, dropout)
+    tgt_pos = PositionalEmbeddings(d_model, tgt_seq_len, dropout)
+
+    # create the encoder blocks
+    encoder_blocks = []
+    for _ in range(n_layers):
+        encoder_self_attention = MultiHeadAttentionBlock(d_model, n_heads, dropout)
+        feed_forward = FeedForwardBlock(d_model, hidden_size, dropout)
+        encoder_block = EncoderBlock(encoder_self_attention, feed_forward)
+        encoder_blocks.append(encoder_block)
+
