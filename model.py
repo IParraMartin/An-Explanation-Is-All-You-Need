@@ -264,16 +264,33 @@ class DecoderBlock(nn.Module):
     def __init__(self, self_attention_block: MultiHeadAttentionBlock, cross_attention_block: MultiHeadAttentionBlock, 
                  feed_forward_block: FeedForwardBlock, dropout: float):
         super().__init__()
+        # Initialize all the pieces
         self.self_attention_block = self_attention_block
         self.cross_attention_block = cross_attention_block
         self.feed_forward_block = feed_forward_block
+        # Get three residual connections
         self.residual_connections = nn.ModuleList([ResidualConnection(dropout) for _ in range(3)])
 
     def forward(self, x, encoder_out, src_mask, tgt_mask):
         x = self.residual_connections[0](lambda x: self.self_attention_block(x, x, x, tgt_mask))
         x = self.residual_connections[1](lambda x: self.self_attention_block(x, encoder_out, encoder_out, src_mask))
+        x = self.residual_connections[2](x, self.feed_forward_block)
 
 
+"""
+This will be our main Decoder object
+"""
 
+class Decoder(nn.Module):
+    def __init__(self, n_layers: nn.ModuleList):
+        super().__init__()
+        self.n_layers = n_layers
+        self.normalization = LayerNormalization()
+
+    def forward(self, x, enc_out, src_mask, tgt_mask):
+        for layer in self.n_layers:
+            x = layer(x, enc_out, src_mask, tgt_mask)
+        return self.normalization(x)
+        
 
 
