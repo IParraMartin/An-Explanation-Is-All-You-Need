@@ -237,7 +237,7 @@ class EncoderBlock(nn.Module):
 
 
 """
-This is how we stack the encoder block in several layers
+This is how we stack the Encoder block in several layers. This will be the main Encoder object.
 """
 
 class Encoder(nn.Module):
@@ -253,4 +253,27 @@ class Encoder(nn.Module):
             x = layer(x, mask)
         # finally we normalize
         return self.normalization(x)
+    
+
+"""
+This will be the Decoder block that will allow us to make several layers of it. We introduce cross attention, which
+is similar to multi-head attention but taken parameters from the encoder.
+"""
+
+class DecoderBlock(nn.Module):
+    def __init__(self, self_attention_block: MultiHeadAttentionBlock, cross_attention_block: MultiHeadAttentionBlock, 
+                 feed_forward_block: FeedForwardBlock, dropout: float):
+        super().__init__()
+        self.self_attention_block = self_attention_block
+        self.cross_attention_block = cross_attention_block
+        self.feed_forward_block = feed_forward_block
+        self.residual_connections = nn.ModuleList([ResidualConnection(dropout) for _ in range(3)])
+
+    def forward(self, x, encoder_out, src_mask, tgt_mask):
+        x = self.residual_connections[0](lambda x: self.self_attention_block(x, x, x, tgt_mask))
+        x = self.residual_connections[1](lambda x: self.self_attention_block(x, encoder_out, encoder_out, src_mask))
+
+
+
+
 
