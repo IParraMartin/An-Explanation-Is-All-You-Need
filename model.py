@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import math
 
-
 """
 Input Embeddings are the first step to build a transformer.
 We set up the dimension of the embeddings (d_model),
@@ -289,7 +288,7 @@ class Decoder(nn.Module):
 """
 Final layer to convert logits to a probability distribution over all the vocabulary
 """
-class LinearDicProjection(nn.Module):
+class LastLinear(nn.Module):
     def __init__(self, d_model, vocab_size):
         super().__init__()
         self.fc = nn.Linear(d_model, vocab_size)
