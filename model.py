@@ -293,3 +293,38 @@ class LastLinear(nn.Module):
 
     def forward(self, x):
         return torch.log_softmax(self.fc(x), dim=-1)
+    
+
+"""
+This is the actual beast: the Transformer. We use all the blocks we have been 
+carefully assembling to build the following class
+"""
+class Transformer(nn.Module):
+    def __init__(self, encoder: Encoder, decoder: Decoder, src_embed: InputEmbeddings, tgt_embed: InputEmbeddings,
+                 src_pos: PositionalEmbeddings, tgt_pos: PositionalEmbeddings, last_linear: LastLinear):
+        super().__init__()
+        # Set all the components we will need
+        self.encoder = encoder
+        self.decoder = decoder
+        self.src_embed = src_embed
+        self.tgt_embed = tgt_embed
+        self.src_pos = src_pos
+        self.tgt_pos = tgt_pos
+        self.last_linear = last_linear
+
+    # We define an encode() function for the encoder.
+    def encode(self, src, src_mask):
+        src = self.src_embed(src)
+        src = self.src_pos(src)
+        return self.encoder(src, src_mask)
+    
+    # We define a decode() function for the decoder.
+    def decode(self, enc_out, src_mask, tgt, tgt_mask):
+        tgt = self.tgt_embed(tgt)
+        tgt = self.tgt_pos(tgt)
+        return self.decoder(tgt, enc_out, src_mask, tgt_mask)
+    
+    # We pass the outputs through the final linear layer
+    def linear(self, x):
+        return self.last_linear(x)
+        
