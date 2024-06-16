@@ -346,6 +346,15 @@ def build_transformer_model(src_vocab_size: int, tgt_vocab_size: int, src_seq_le
     for _ in range(n_layers):
         encoder_self_attention = MultiHeadAttentionBlock(d_model, n_heads, dropout)
         feed_forward = FeedForwardBlock(d_model, hidden_size, dropout)
-        encoder_block = EncoderBlock(encoder_self_attention, feed_forward)
+        encoder_block = EncoderBlock(encoder_self_attention, feed_forward, dropout)
         encoder_blocks.append(encoder_block)
+
+    # create the decoder blocks
+    decoder_blocks = []
+    for _ in range(n_layers):
+        decoder_self_attention = MultiHeadAttentionBlock(d_model, n_heads, dropout)
+        decoder_cross_attention = MultiHeadAttentionBlock(d_model, n_heads, dropout)
+        feed_forward = FeedForwardBlock(d_model, hidden_size, dropout)
+        decoder_block = DecoderBlock(decoder_self_attention, decoder_cross_attention, feed_forward, dropout)
+        decoder_blocks.append(decoder_block)
 
