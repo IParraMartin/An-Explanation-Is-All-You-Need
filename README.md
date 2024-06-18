@@ -1,7 +1,7 @@
 # An Explanation Is All You Need: The Transformer Decoded
 
 <p align="center">
-  <img src="kqv.png" width="350" title="This is what u need">
+  <img src="resources/header.png" width="600" title="This is what u need">
 </p>
 
 Welcome to my repo! I implement the transformer architecture from scratch using PyTorch. I tried to go through all the key subcomponents, adding extensive notes and clarifications. This repository's key objective is to provide knowledge and precise explanations for each component.
