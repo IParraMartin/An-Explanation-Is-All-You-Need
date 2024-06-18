@@ -10,6 +10,7 @@ and the vocab size (vocan_size). Then we use an embedding
 layer from torch.nn and set num_embeddings and embedding_dim
 """
 class InputEmbeddings(nn.Module):
+    
     def __init__(self, d_model: int, vocab_size: int):
         super().__init__()
         self.d_model = d_model
@@ -31,6 +32,7 @@ authors came up with positional encoding, which is summed to
 the original embeddings.
 """
 class PositionalEmbeddings(nn.Module):
+
     def __init__(self, d_model: int, seq_len: int, dropout: float):
         super().__init__()
         self.d_model = d_model
@@ -70,6 +72,7 @@ We now design the Layer Normalization. We do this by passing an epsilon value (e
 which is added to avoid 0 division in the normalization operation.
 """
 class LayerNormalization(nn.Module):
+
     def __init__(self, eps: float = 10 ** -6):
         super().__init__()
         self.eps = eps
@@ -90,6 +93,7 @@ This is the Position Wise Feed-Forward Network. That's just a fancy name
 for a simple neural network, with two layers and a Relu activation in between.
 """
 class FeedForwardBlock(nn.Module):
+
     def __init__(self, d_model: int, d_ff: int, dropout: float):
         super().__init__()
         self.linear1 = nn.Linear(d_model, d_ff) # This corresponds to W1 and B1 of Vaswani et al. (2017)
@@ -105,6 +109,7 @@ class FeedForwardBlock(nn.Module):
 This is probably the most important block: the famous Multi-Head Attention.
 """
 class MultiHeadAttentionBlock(nn.Module):
+
     def __init__(self, d_model: int, n_heads: int, dropout: float):
         super().__init__()
         self.d_model = d_model
@@ -196,6 +201,7 @@ Here we will build the residual connection component of the transformer.
 This will allow a better training and make some 'raw' input flow from layer to layer.
 """
 class ResidualConnection(nn.Module):
+
     def __init__(self, dropout: float):
         super().__init__()
         self.dropout = nn.Dropout(dropout)
@@ -211,6 +217,7 @@ Here's the encoder block that we will use to create the
 Encoder object (stacking of Encoder layers)
 """
 class EncoderBlock(nn.Module):
+
     def __init__(self, self_attention_block: MultiHeadAttentionBlock, feed_forward_block: FeedForwardBlock, dropout: float):
         super().__init__()
         # This is the multi-head attention
@@ -235,6 +242,7 @@ the main Encoder object. Because it has to be able to take several Encoder
 blocks, we use nn.ModuleList as a parameter
 """
 class Encoder(nn.Module):
+
     def __init__(self, n_layers: nn.ModuleList):
         super().__init__()
         # We can create as many layers as we want
@@ -255,6 +263,7 @@ We introduce cross attention, which is similar to multi-head attention but taken
 parameters from the encoder.
 """
 class DecoderBlock(nn.Module):
+
     def __init__(self, self_attention_block: MultiHeadAttentionBlock, cross_attention_block: MultiHeadAttentionBlock, 
                  feed_forward_block: FeedForwardBlock, dropout: float):
         super().__init__()
@@ -276,6 +285,7 @@ This will be our main Decoder object that we will use to ensemble
 all layers.
 """
 class Decoder(nn.Module):
+
     def __init__(self, n_layers: nn.ModuleList):
         super().__init__()
         # we set the n_layers parameter
@@ -295,6 +305,7 @@ Final layer to convert logits to a probability distribution over all the vocabul
 of the target language (we are building the og transformer)
 """
 class LastLinear(nn.Module):
+
     def __init__(self, d_model, vocab_size):
         super().__init__()
         self.fc = nn.Linear(d_model, vocab_size)
@@ -308,8 +319,10 @@ This is the actual beast: the Transformer. We use all the blocks we have been
 carefully assembling to build the following class
 """
 class Transformer(nn.Module):
-    def __init__(self, encoder: Encoder, decoder: Decoder, src_embed: InputEmbeddings, tgt_embed: InputEmbeddings,
-                 src_pos: PositionalEmbeddings, tgt_pos: PositionalEmbeddings, last_linear: LastLinear):
+
+    def __init__(self, encoder: Encoder, decoder: Decoder, src_embed: InputEmbeddings, 
+                 tgt_embed: InputEmbeddings, src_pos: PositionalEmbeddings, tgt_pos: PositionalEmbeddings, 
+                 last_linear: LastLinear):
         super().__init__()
         # Set all the components we will need
         self.encoder = encoder
@@ -342,8 +355,9 @@ We will finally create a function that allows us to ensemble everything
 together and create the layers of encoders and decoders. This is what the
 original paper calls Nx in the figure to the sides of the main figure.
 """
-def build_transformer_model(src_vocab_size: int, tgt_vocab_size: int, src_seq_len: int, tgt_seq_len: int, d_model: int= 512, 
-                            n_layers: int = 6, n_heads: int = 8, dropout: float = 0.1, hidden_size: int = 2048):
+def build_transformer_model(src_vocab_size: int, tgt_vocab_size: int, src_seq_len: int, 
+                            tgt_seq_len: int, d_model: int= 512, n_layers: int = 6, 
+                            n_heads: int = 8, dropout: float = 0.1, hidden_size: int = 2048):
     
     # Make the embedding layers for input and target
     src_embed = InputEmbeddings(d_model, src_vocab_size)
@@ -399,10 +413,3 @@ def build_transformer_model(src_vocab_size: int, tgt_vocab_size: int, src_seq_le
     
     # FINALLY, return the transformer
     return transformer
-
-
-
-    
-
-
-
