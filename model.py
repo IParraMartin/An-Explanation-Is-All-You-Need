@@ -362,3 +362,38 @@ def build_transformer_model(src_vocab_size: int, tgt_vocab_size: int, src_seq_le
         decoder_block = DecoderBlock(decoder_self_attention, decoder_cross_attention, feed_forward, dropout)
         decoder_blocks.append(decoder_block)
 
+    """
+    Now we pass those layers as the argumemtn to the main objects.
+    Remember that our main classes for encoder and decoder take
+    nn.ModuleList as arguments (aka, the layers stacked)
+    """
+    encoder = Encoder(nn.ModuleList(encoder_blocks))
+    decoder = Decoder(nn.ModuleList(decoder_blocks))
+
+    last_layer = LastLinear(d_model, tgt_vocab_size)
+
+    # Now, build our model using the transformer class we built
+    transformer = Transformer(
+        encoder=encoder,
+        decoder=decoder,
+        src_embed=src_embed,
+        tgt_embed=tgt_embed,
+        src_pos=src_pos,
+        tgt_pos=tgt_pos,
+        last_linear=last_layer
+    )
+
+    # Now we initialize the parameters with Xavier initialization
+    for p in transformer.parameters():
+        if p.dim() > 1:
+            nn.init.xavier_uniform_(p)
+    
+    # FINALLY, return the transformer
+    return transformer
+
+
+
+    
+
+
+
