@@ -126,8 +126,9 @@ class MultiHeadAttentionBlock(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         """
-        COMMON QUESION: If d_k and d_v are the same dimensions, why do they have different names?
-        d_v is the result of the last multiplication of the attention formula (which is by V; see 
+        COMMON QUESION: If d_k and d_v are the same dimensions,
+        why do they have different names? d_v is the result of the last
+        multiplication of the attention formula (which is by V; see 
         the original paper). However, in practice they are the same.
         """
 
@@ -190,8 +191,8 @@ class MultiHeadAttentionBlock(nn.Module):
     
 
 """
-Here we will build the residual connection component of the transformer. This will allow
-a better training and make some 'raw' input flow from layer to layer.
+Here we will build the residual connection component of the transformer. 
+This will allow a better training and make some 'raw' input flow from layer to layer.
 """
 class ResidualConnection(nn.Module):
     def __init__(self, dropout: float):
@@ -205,7 +206,8 @@ class ResidualConnection(nn.Module):
 
 
 """
-Here's the encoder block that we will use to create the Encoder object (stacking of Encoder layers)
+Here's the encoder block that we will use to create the 
+Encoder object (stacking of Encoder layers)
 """
 class EncoderBlock(nn.Module):
     def __init__(self, self_attention_block: MultiHeadAttentionBlock, feed_forward_block: FeedForwardBlock, dropout: float):
@@ -227,7 +229,9 @@ class EncoderBlock(nn.Module):
 
 
 """
-This is how we stack the Encoder block in several layers. This will be the main Encoder object.
+This is how we stack the Encoder block in several layers. This will be 
+the main Encoder object. Because it has to be able to take several Encoder
+blocks, we use nn.ModuleList as a parameter
 """
 class Encoder(nn.Module):
     def __init__(self, n_layers: nn.ModuleList):
@@ -245,8 +249,9 @@ class Encoder(nn.Module):
     
 
 """
-This will be the Decoder block that will allow us to make several layers of it. We introduce cross attention, which
-is similar to multi-head attention but taken parameters from the encoder.
+This will be the Decoder block that will allow us to make several layers of it. 
+We introduce cross attention, which is similar to multi-head attention but taken 
+parameters from the encoder.
 """
 class DecoderBlock(nn.Module):
     def __init__(self, self_attention_block: MultiHeadAttentionBlock, cross_attention_block: MultiHeadAttentionBlock, 
@@ -266,7 +271,8 @@ class DecoderBlock(nn.Module):
 
 
 """
-This will be our main Decoder object
+This will be our main Decoder object that we will use to ensemble
+all layers.
 """
 class Decoder(nn.Module):
     def __init__(self, n_layers: nn.ModuleList):
