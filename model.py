@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import math
 
+
 """
 Input Embeddings are the first step to build a transformer.
 We set up the dimension of the embeddings (d_model),
@@ -334,6 +335,7 @@ class Transformer(nn.Module):
     # We pass the outputs through the final linear layer
     def linear(self, x):
         return self.last_linear(x)
+
 
 """
 We will finally create a function that allows us to ensemble everything
