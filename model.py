@@ -291,6 +291,7 @@ class Decoder(nn.Module):
 
 """
 Final layer to convert logits to a probability distribution over all the vocabulary
+of the target language (we are building the og transformer)
 """
 class LastLinear(nn.Module):
     def __init__(self, d_model, vocab_size):
